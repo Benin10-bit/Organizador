@@ -1,0 +1,2 @@
+[console_scripts]
+varredura = organizador.varredura:run

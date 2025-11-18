@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+src/organizador/__init__.py
+src/organizador/varredura.py
+src/organizador.egg-info/PKG-INFO
+src/organizador.egg-info/SOURCES.txt
+src/organizador.egg-info/dependency_links.txt
+src/organizador.egg-info/entry_points.txt
+src/organizador.egg-info/requires.txt
+src/organizador.egg-info/top_level.txt

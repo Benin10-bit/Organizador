@@ -1,0 +1,17 @@
+[project]
+name = "organizador"
+version = "0.1.0"
+description = ""
+authors = [
+    { name = "Benin10-bit", email = "beniciodoamaralneto2019@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "scikit-learn>=1.7.2,<2.0.0",
+    "pandas>=2.3.3,<3.0.0",
+    "pathlib>=1.0.1,<2.0.0"
+]
+
+[project.scripts]
+varredura = "organizador.varredura:run"
