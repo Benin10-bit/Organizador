@@ -15,3 +15,12 @@ dependencies = [
 
 [project.scripts]
 varredura = "organizador.varredura:run"
+treino    = "organizador.IA.treino:run"
+identify  = "organizador.identify:run"
+predict   = "organizador.IA.predict:run"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

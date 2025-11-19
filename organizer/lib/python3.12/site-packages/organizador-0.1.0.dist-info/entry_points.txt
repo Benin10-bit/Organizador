@@ -1,2 +1,5 @@
 [console_scripts]
+identify = organizador.identify:run
+predict = organizador.IA.predict:run
+treino = organizador.IA.treino:run
 varredura = organizador.varredura:run
