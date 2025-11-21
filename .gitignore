@@ -1,0 +1,119 @@
+############################################
+# PYTHON
+############################################
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.dist-info/
+*.egg-info/
+*.egg
+
+# Byte-compiled / compiled / Caches
+*.pkl
+*.pickle
+*.joblib
+*.dat
+*.npy
+
+############################################
+# VIRTUAL ENV
+############################################
+venv/
+.venv/
+env/
+.env/
+organizer/          # seu ambiente virtual dentro da pasta
+organizer/*         # evita subir libs
+
+############################################
+# IA / NLP / MODELOS PESADOS
+############################################
+# SentenceTransformers cache
+sentence_transformers/
+**/sentence-transformers_*/
+.cache/
+.cache/**
+transformers/
+models/
+model/
+*.bin
+*.pt
+*.h5
+*.onnx
+
+# HuggingFace / Torch cache
+~/.cache/torch/
+torch_cache/
+transformers_cache/
+**/tokenizer.json
+
+############################################
+# LOGS / DEBUG / DUMPS
+############################################
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*.dump
+
+############################################
+# BUILD / DISTRIBUIÇÃO
+############################################
+build/
+dist/
+*.spec
+*.manifest
+*.dll
+*.o
+*.a
+
+############################################
+# APP / INTERFACE
+############################################
+# PyQt / CustomTkinter temporários
+*.ui~
+*.qm
+
+############################################
+# SELENIUM / WEBDRIVERS
+############################################
+chromedriver*
+geckodriver*
+*.dmg
+*.exe
+
+############################################
+# SISTEMA OPERACIONAL
+############################################
+# Windows / Linux / Mac
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux Trash
+.Trash-*
+
+############################################
+# IDEs / EDITORES
+############################################
+.vscode/
+.idea/
+*.code-workspace
+
+############################################
+# CONFIGURAÇÕES SENSÍVEIS
+############################################
+# (caso adicione)
+*.env
+*.ini
+config.json
+secrets.json
+credentials.json

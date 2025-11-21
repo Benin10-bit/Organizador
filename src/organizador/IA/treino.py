@@ -1,98 +1,80 @@
 import pandas as pd
-import re
 import joblib
-from pathlib import Path
-
-from sklearn.pipeline import Pipeline
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.metrics import accuracy_score
+from sentence_transformers import SentenceTransformer
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, classification_report
+import lightgbm as lgb
+import os
 
-# Stopwords
-STOPWORDS_PT = [
-    "a","o","as","os","e","é","de","do","da","dos","das",
-    "que","em","um","uma","para","por","com","na","no","nas","nos",
-    "se","sua","seu","suas","seus","como","mas","ou","ao","aos",
-    "à","às","ser","ter","há","isso","isto","aquele","aquela",
-    "eles","elas","ele","ela","tudo","toda","todo","todas",
-]
-
-# Função para limpar textos
-def limpar_texto(t):
-    t = str(t).lower()
-    t = re.sub(r"http\S+", "", t)
-    t = re.sub(r"\d+", " ", t)
-    t = re.sub(r"[^a-záéíóúàâêîôûçãõ\s]", " ", t)
-    t = re.sub(r"\s+", " ", t)
-    return t.strip()
-
-def predict(texto: str):
-    base_dir = Path(__file__).resolve().parent
-
-    modelo_path = base_dir / "classificador.joblib"
-
-    if not modelo_path.exists():
-        raise FileNotFoundError(f"Modelo não encontrado: {modelo_path}")
-
-    modelo = joblib.load(modelo_path)
-
-    texto_limpo = limpar_texto(texto)
-
-    pred = modelo.predict([texto_limpo])[0]
-
-    return pred
-
+# ------------------------------
+# Função de pré-processamento
+# ------------------------------
 def run():
-    # Caminho da pasta onde este arquivo está
-    base_dir = Path(__file__).resolve().parent
+    def preprocess_text(text):
+        text = str(text).strip().lower()
+        return text
 
-    # Caminho correto do CSV dentro da pasta IA
-    csv_path = base_dir / "treino.csv"
+    # Carregar dataset
+    BASEPATH = os.path.dirname(__file__)
+    CSVPATH = os.path.join(BASEPATH, "textos_para_predicao.csv")
+    df = pd.read_csv(CSVPATH)
 
-    if not csv_path.exists():
-        raise FileNotFoundError(f"Arquivo não encontrado: {csv_path}")
+    # Remover classes com poucos exemplos
+    min_examples = 10
+    counts = df['materia'].value_counts()
+    df = df[df['materia'].isin(counts[counts >= min_examples].index)]
 
-    print(f"Lendo dataset: {csv_path}")
+    X = df['texto'].apply(preprocess_text).tolist()
+    y = df['materia'].tolist()
 
-    # Carregar dados
-    df = pd.read_csv(csv_path)
-
-    df["text_clean"] = df["text"].apply(limpar_texto)
-
-    X = df["text_clean"]
-    y = df["label"]
-
+    # Treino / teste
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
+        X, y, test_size=0.2, random_state=42, stratify=y
     )
 
-    # Pipeline com TF-IDF + NB
-    pipeline = Pipeline([
-        ("tfidf", TfidfVectorizer(
-            ngram_range=(1,2),
-            sublinear_tf=True,
-            min_df=2,
-        )),
-        ("model", MultinomialNB(alpha=0.3))
-    ])
+    # Carregar modelo MiniLM
+    print("Carregando MiniLM...")
+    model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
-    # Treinar
-    pipeline.fit(X_train, y_train)
+    # Gerar embeddings
+    print("Gerando embeddings de treino...")
+    emb_train = model.encode(X_train, batch_size=32, show_progress_bar=True)
+    print("Gerando embeddings de teste...")
+    emb_test = model.encode(X_test, batch_size=32, show_progress_bar=True)
 
-    # Predizer
-    y_pred = pipeline.predict(X_test)
+    # Normalizar embeddings
+    scaler = StandardScaler()
+    emb_train = scaler.fit_transform(emb_train)
+    emb_test = scaler.transform(emb_test)
 
-    # Acurácia
+    # Treinar LightGBM Classifier
+    clf = lgb.LGBMClassifier(
+        objective='multiclass',
+        num_class=len(set(y)),
+        boosting_type='gbdt',
+        max_depth=10,
+        n_estimators=500,
+        learning_rate=0.05,
+        class_weight='balanced'
+    )
+    clf.fit(emb_train, y_train)
+
+    # Avaliação detalhada
+    y_pred = clf.predict(emb_test)
     acc = accuracy_score(y_test, y_pred)
-    print(f"Acurácia: {acc*100:.2f}%")
+    print(f"\nAcurácia geral: {acc*100:.2f}%")
+    print("\nRelatório detalhado por classe:\n")
+    print(classification_report(y_test, y_pred))
 
-    # Salvar dentro da pasta IA
-    modelo_path = base_dir / "classificador.joblib"
-    joblib.dump(pipeline, modelo_path)
+    # Salvar modelo + scaler
+    joblib.dump({
+        "bert": model,
+        "clf": clf,
+        "scaler": scaler
+    }, os.path.join(BASEPATH, "classificador.joblib"))
 
-    print(f"Modelo salvo em:\n{modelo_path}")
+    print("\nModelo salvo como 'classificador.joblib'")
 
 if __name__ == "__main__":
-    print("Treinando IA:")
     run()
