@@ -13,6 +13,9 @@ THEMEPATH = os.path.join(BASEPATH, "themes/organize.json")
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme(THEMEPATH)
 
+janela = ctk.CTk()
+janela.title("Organize Aí")
+janela.geometry("1024x650")
 # --- Log visual ---------------------------------------------------------
 def log(msg):
     logBox.configure(state="normal")
@@ -23,7 +26,12 @@ def log(msg):
 
 # --- Seleção de diretório -----------------------------------------------
 def selectDir():
-    caminho = filedialog.askdirectory()
+    caminho = filedialog.askdirectory(
+        parent= janela,
+        title="Escolha uma pasta",
+        initialdir="~",  
+        mustexist=True
+    )
     if caminho:
         entrada.configure(state="normal")
         entrada.delete(0, ctk.END)
@@ -54,9 +62,6 @@ def iniciar_scan():
 
 
 # --- Interface -----------------------------------------------------------
-janela = ctk.CTk()
-janela.title("Organize Aí")
-janela.geometry("1024x650")
 
 menuLateral = ctk.CTkFrame(janela, width=200)
 menuLateral.pack(side="left", fill="y")
