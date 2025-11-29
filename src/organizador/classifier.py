@@ -10,15 +10,25 @@ CATEGORIES = {
     "Compactados": [".zip", ".rar", ".7z"],
 }
 
-def classify(pathFile):
-    ext = Path(pathFile).suffix.lower()
+def classify(*pathFile):
+    classificados = list()
 
-    for category, exts in CATEGORIES.items():
-        if ext == exts:
-            return category
+    for i in pathFile:
+        # Extrair a extensão (ex: '.txt', '.jpg')
+        ext = Path(pathFile).suffix.lower()
+
+        # Verificar em cada categoria se a extensão está mapeada
+        for category, exts in CATEGORIES.items():
+            # Aqui deve verificar se ext está na lista 'exts'.
+            if ext in exts:
+                return category
+
+        # Se não encontrou categoria pelas extensões, tentar via MIME
+        mime, _ = mimetypes.guess_type(pathFile)
+        if mime:
+            # Exemplo: "image/png" → "Image"
+            return mime.split('/')[0].capitalize()
+
+        # Caso nenhuma classificação seja possível
+        return "Outros"
     
-    mime, _ = mimetypes.guess_type(pathFile)
-    if mime:
-        return mime.split('/')[0].capitalize()
-    
-    return "Outros"

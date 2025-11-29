@@ -20,6 +20,7 @@ dependencies = [
 [project.scripts]
 dev = "interface.main:run"
 treino = "organizador.IA.treino:run"
+scan = "organizador.scanner:run"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
