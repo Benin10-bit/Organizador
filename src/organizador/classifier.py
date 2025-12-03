@@ -10,25 +10,48 @@ CATEGORIES = {
     "Compactados": [".zip", ".rar", ".7z"],
 }
 
-def classify(*pathFile):
-    classificados = list()
+def classify(files: list[Path]) -> list:
+    """
+    Classifica arquivos APENAS quando receber uma lista.
+    Retorna lista de dicts: { nome: str, category: str }
+    """
+    categorizados = []
 
-    for i in pathFile:
-        # Extrair a extensão (ex: '.txt', '.jpg')
-        ext = Path(pathFile).suffix.lower()
+    for file in files:
 
-        # Verificar em cada categoria se a extensão está mapeada
+        # Segurança: ignorar itens inválidos
+        if not isinstance(file, Path):
+            continue
+
+        ext = file.suffix.lower()
+        found = False
+
+        # Verificar por extensão
         for category, exts in CATEGORIES.items():
-            # Aqui deve verificar se ext está na lista 'exts'.
             if ext in exts:
-                return category
+                categorizados.append({
+                    "nome": file.name,
+                    "category": category
+                })
+                found = True
+                break
 
-        # Se não encontrou categoria pelas extensões, tentar via MIME
-        mime, _ = mimetypes.guess_type(pathFile)
+        if found:
+            continue
+
+        # Verificar por MIME
+        mime, _ = mimetypes.guess_type(str(file))
         if mime:
-            # Exemplo: "image/png" → "Image"
-            return mime.split('/')[0].capitalize()
+            categorizados.append({
+                "nome": file.name,
+                "category": mime.split("/")[0].capitalize()
+            })
+            continue
 
-        # Caso nenhuma classificação seja possível
-        return "Outros"
-    
+        # Caso nada encaixe
+        categorizados.append({
+            "nome": file.name,
+            "category": "Outros"
+        })
+
+    return categorizados

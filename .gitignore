@@ -38,7 +38,6 @@ sentence_transformers/
 .cache/**
 transformers/
 models/
-model/
 *.bin
 *.pt
 *.h5
@@ -118,3 +117,7 @@ $RECYCLE.BIN/
 config.json
 secrets.json
 credentials.json
+
+
+criartabela.py
+org
