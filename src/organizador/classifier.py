@@ -1,14 +1,77 @@
 from pathlib import Path
 import mimetypes
+import os
 
-CATEGORIES = {
-    "Imagens": [".png", ".jpg", ".jpeg", ".gif", ".bmp"],
-    "Vídeos": [".mp4", ".avi", ".mov", ".mkv"],
-    "Documentos": [".pdf", ".docx", ".doc", ".txt", ".pptx", ".xlsx"],
-    "Áudio": [".mp3", ".wav", ".ogg"],
-    "Executáveis": [".exe", ".msi", ".sh"],
-    "Compactados": [".zip", ".rar", ".7z"],
+CATEGORIES_WINDOWS = {
+    "Imagens": [
+        ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".svg", ".webp",".ico", ".psd", ".ai", ".xcf"
+    ],
+    "Vídeos": [
+        ".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".mpeg", ".mpg",".webm", ".3gp"
+    ],
+    "Documentos": [
+        ".pdf", ".docx", ".doc", ".pptx", ".ppt", ".xlsx", ".xls",".rtf", ".txt", ".md", ".csv", ".json", ".xml", ".yaml", ".yml"
+    ],
+    "Áudio": [
+        ".mp3", ".wav", ".aac", ".flac", ".ogg", ".wma", ".m4a"
+    ],
+    "Executáveis": [
+        ".exe", ".msi", ".bat", ".cmd", ".com", ".ps1"
+    ],
+    "Compactados": [
+        ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz"
+    ],
+    "Atalhos": [
+        ".lnk", ".url", ".library-ms"
+    ],
+    "Programação": [
+        ".py", ".js", ".ts", ".java", ".c", ".cpp", ".cs",".go", ".rb", ".php", ".html", ".css", ".scss"
+    ],
+    "Fontes": [
+        ".ttf", ".otf", ".woff", ".woff2"
+    ],
+    "Sistemas": [
+        ".dll", ".sys", ".inf", ".reg", ".iso", ".img"
+    ]
 }
+
+CATEGORIES_LINUX = {
+    "Imagens": [
+        ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".svg", ".webp",".ico", ".psd", ".xcf"
+    ],
+    "Vídeos": [
+        ".mp4", ".avi", ".mov", ".mkv", ".flv", ".mpeg", ".mpg", ".webm", ".ogv", ".3gp"
+    ],
+    "Documentos": [
+        ".pdf", ".odt", ".ods", ".odp", ".txt", ".md", ".csv", ".json", ".xml", ".yaml", ".yml", ".epub"
+    ],
+    "Áudio": [
+        ".mp3", ".wav", ".flac", ".ogg", ".oga", ".m4a"
+    ],
+    "Executáveis": [
+        ".sh", ".bin", ".run", ".AppImage", ".desktop"
+    ],
+    "Compactados": [
+        ".zip", ".tar", ".gz", ".bz2", ".xz", ".7z", ".tar.gz", ".tgz"
+    ],
+    "Configurações": [
+        ".conf", ".ini", ".service", ".rule", ".mount"
+    ],
+    "Programação": [
+        ".py", ".js", ".ts", ".java", ".c", ".cpp", ".cs",".go", ".rs", ".rb", ".php", ".sh", ".html", ".css", ".scss"
+    ],
+    "Fontes": [
+        ".ttf", ".otf", ".woff", ".woff2"
+    ],
+    "Sistemas": [
+        ".so", ".img", ".iso", ".log", ".lock"
+    ]
+}
+
+if os.name == "nt":
+    CATEGORIES = CATEGORIES_WINDOWS
+else:
+    CATEGORIES = CATEGORIES_LINUX
 
 def classify(files: list[Path]) -> list:
     """
@@ -30,7 +93,7 @@ def classify(files: list[Path]) -> list:
         for category, exts in CATEGORIES.items():
             if ext in exts:
                 categorizados.append({
-                    "nome": file.name,
+                    "nome": file,
                     "category": category
                 })
                 found = True

@@ -9,11 +9,9 @@ from interface.Home import Home
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
-        BASEPATH = os.path.dirname(__file__)
-        THEMEPATH = os.path.join(BASEPATH, "themes/organize.json")
 
-        ctk.set_appearance_mode("dark")
-        ctk.set_default_color_theme("blue")
+        ctk.set_appearance_mode("system")
+        ctk.set_default_color_theme("dark-blue")
 
         # Configurações da janela
         self.title("Organize Aí")

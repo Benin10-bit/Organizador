@@ -25,17 +25,17 @@ class Ruler:
             # Regra: nome contém texto específico
             if "contem" in rule:
                 if rule["contem"].lower() in name:
-                    return rule.get("mover_para") or rule.get("move_to")
+                    return rule.get("move_to")
 
             # Regra: extensão exata
             if "ext" in rule:
                 if rule["ext"].lower() == ext:
-                    return rule.get("move_to") or rule.get("mover_para")
+                    return rule.get("move_to") 
 
             # Regra: tamanho mínimo
             if "tam_min" in rule:
                 if rule["tam_min"] <= size:
-                    return rule.get("move_to") or rule.get("mover_para")
+                    return rule.get("move_to") 
 
         # Nenhuma regra correspondeu
         return None
