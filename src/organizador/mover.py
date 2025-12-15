@@ -21,6 +21,11 @@ class Mover:
 
         for file in fileList:
 
+            category = file["category"]
+
+            if category in ["Sistemas", "Configurações", "Outros"]:
+                continue
+
             file = Path(file)
 
             destino = home / category

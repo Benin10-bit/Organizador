@@ -27,7 +27,7 @@ def run():
 
     # Caminho do dataset
     BASEPATH = os.path.dirname(__file__)
-    CSVPATH = os.path.join(BASEPATH, "textos_para_predicao.csv")
+    CSVPATH = os.path.join(BASEPATH, "dataset_balanceado_600.csv")
 
     # -------------------------------------------------------
     # Carregar dataset original

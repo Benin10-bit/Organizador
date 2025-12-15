@@ -78,6 +78,8 @@ class Scanner:
     def __len__(self):
         return len(self._arquivos)
     
-    def run(self, caminho):
-        return self.scan(caminho)
+#Depuração    
+def run():
+    
+    pass
     

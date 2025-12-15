@@ -214,7 +214,7 @@ class Home(ctk.CTkFrame):
 
         self.labelTempo = ctk.CTkLabel(
             timeFrame,
-            text="0s",
+            text="00:00:00",
             font=ctk.CTkFont(size=28, weight="bold"),
             text_color="#3b82f6"
         )
@@ -364,7 +364,7 @@ class Home(ctk.CTkFrame):
             fg_color="transparent",
             height=90
         )
-        btnContainer.pack(fill="x", padx=40, pady=(0, 25))
+        btnContainer.pack(fill="x", padx=25, pady=(0, 25))
         btnContainer.pack_propagate(False)
         
         # Sombra do botão (efeito de profundidade)
@@ -374,7 +374,7 @@ class Home(ctk.CTkFrame):
             corner_radius=16,
             height=78
         )
-        btnShadow.place(relx=0.5, rely=0.52, anchor="center", relwidth=0.70)
+        btnShadow.place(relx=0.5, rely=0.52, anchor="center", relwidth=1.0)
         
         # Botão principal
         self.btnScan = ctk.CTkButton(
@@ -388,7 +388,7 @@ class Home(ctk.CTkFrame):
             corner_radius=14,
             border_width=0
         )
-        self.btnScan.place(relx=0.5, rely=0.48, anchor="center", relwidth=0.67)
+        self.btnScan.place(relx=0.5, rely=0.48, anchor="center", relwidth=0.98)
 
     def criar_barra_progresso(self, parent):
         """Barra de progresso premium"""
@@ -562,9 +562,11 @@ class Home(ctk.CTkFrame):
         """Atualiza o timer enquanto o scan está ativo"""
         while self.scanning:
             elapsed = time.time() - self.tempo_inicio
-            segundos = int(elapsed)
+            horas = int(elapsed // 3600)
+            minutos = int((elapsed % 3600) // 60)
+            segundos = int(elapsed % 60)
             
-            tempo_str = f"{segundos}s"
+            tempo_str = f"{horas:02d}:{minutos:02d}:{segundos:02d}"
             self.labelTempo.configure(text=tempo_str)
             time.sleep(0.5)
 

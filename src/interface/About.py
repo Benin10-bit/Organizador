@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from interface.Home import Home
+from interface.provi import Home
 
 
 class Resumo(ctk.CTkFrame):

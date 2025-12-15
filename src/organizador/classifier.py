@@ -24,9 +24,6 @@ CATEGORIES_WINDOWS = {
     "Atalhos": [
         ".lnk", ".url", ".library-ms"
     ],
-    "Programação": [
-        ".py", ".js", ".ts", ".java", ".c", ".cpp", ".cs",".go", ".rb", ".php", ".html", ".css", ".scss"
-    ],
     "Fontes": [
         ".ttf", ".otf", ".woff", ".woff2"
     ],
@@ -56,9 +53,6 @@ CATEGORIES_LINUX = {
     ],
     "Configurações": [
         ".conf", ".ini", ".service", ".rule", ".mount"
-    ],
-    "Programação": [
-        ".py", ".js", ".ts", ".java", ".c", ".cpp", ".cs",".go", ".rs", ".rb", ".php", ".sh", ".html", ".css", ".scss"
     ],
     "Fontes": [
         ".ttf", ".otf", ".woff", ".woff2"
@@ -93,7 +87,7 @@ def classify(files: list[Path]) -> list:
         for category, exts in CATEGORIES.items():
             if ext in exts:
                 categorizados.append({
-                    "nome": file,
+                    "path": file,
                     "category": category
                 })
                 found = True

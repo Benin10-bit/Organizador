@@ -3,7 +3,7 @@ import os
 
 from interface.Statistics import Statistics
 from interface.About import Resumo
-from interface.Home import Home
+from interface.provi import Home
 
 
 class App(ctk.CTk):
@@ -15,7 +15,7 @@ class App(ctk.CTk):
 
         # Configurações da janela
         self.title("Organize Aí")
-        self.geometry("1280x720")
+        self.geometry("1280x1000")
 
         self.pages = dict()
 
