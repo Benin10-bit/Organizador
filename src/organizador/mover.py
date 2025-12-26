@@ -42,13 +42,11 @@ class Mover:
                     continue
 
                 # aplica regras especiais para determinar categoria/destino, se houver
-                special = self.specialRules(file_path)
+                special = self.specialRules(file_path)  # retorna string ou None
                 if special:
-                    destino = home / special
+                    destino = home / str(special)
                 else:
-                    # se categoria não informada, tenta inferir via rules (semânticamente idêntico a specialRules)
-                    destino_cat = category or special or "Outros"
-                    # se regra retornou None e categoria None, deixa em "Outros"
+                    destino_cat = category or "Outros"
                     destino = home / destino_cat
 
                 # ignora categorias pré-definidas
@@ -59,6 +57,7 @@ class Mover:
                 target = destino / file_path.name
                 # usa shutil.move (pode sobrescrever) — quem chamar pode decidir sobre políticas adicionais
                 shutil.move(str(file_path), str(target))
+                # não retornar aqui: continuar processando o restante da lista
             except Exception:
                 # não levantar exceção aqui para não interromper lote; chamador pode logar
                 continue
