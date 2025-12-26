@@ -1,85 +1,65 @@
-from pathlib import Path
 import os
+from pathlib import Path
+
+from organizador.blacklist import BlackList
+
 
 class Scanner:
 
     def __init__(self):
-        self._arquivos = []
+        self._arquivos: list[Path] = []
 
-        self.LINUX_SYSTEM_DIRS = ["/bin", "/sbin", "/usr", "/lib", "/lib64", "/etc", "/boot", "/var", "/proc", "/sys", "/dev", "/run", "/snap", "/opt"]
+        self.blacklist = BlackList()
 
-        self.WINDOWS_SYSTEM_DIRS = ["c:/windows", "c:/windows/system32","c:/program files","c:/program files (x86)","c:/programdata","c:/users/all users"]
+        # normaliza blacklist vinda do arquivo
+        self._bloqueadas = {
+            Path(p).resolve()
+            for p in self.blacklist.readBlackList()
+        }
 
-        self.BASEPATH = Path(__file__).parent
+    def _scan_dir(self, base: Path):
+        try:
+            with os.scandir(base) as it:
+                for entry in it:
+                    try:
+                        # ignora symlinks
+                        if entry.is_symlink():
+                            continue
 
-    def isSystem(self, caminho):
-        p = caminho.resolve()
-        p_str = str(p).lower().replace("\\", "/")
+                        entry_path = Path(entry.path).resolve()
 
-        if os.name == "posix":
-            # checar pastas do sistema
-            if any(p_str.startswith(folder) for folder in self.LINUX_SYSTEM_DIRS):
-                return True
+                        # verifica blacklist (robusta)
+                        if any(entry_path.is_relative_to(b) for b in self._bloqueadas):
+                            continue
 
-            # UID 0 = root
-            try:
-                if p.stat().st_uid == 0:
-                    return True
-            except PermissionError:
-                return True
+                        if entry.is_dir(follow_symlinks=False):
+                            self._scan_dir(entry_path)
 
-        elif os.name == "nt":
-            if any(p_str.startswith(folder) for folder in self.WINDOWS_SYSTEM_DIRS):
-                return True
+                        elif entry.is_file(follow_symlinks=False):
+                            self._arquivos.append(entry_path)
 
-            # Arquivo bloqueado ou protegido
-            try:
-                if not os.access(p, os.W_OK):
-                    return True
-            except:
-                return True
-
-        return False
+                    except (PermissionError, OSError):
+                        continue
+        except (PermissionError, FileNotFoundError):
+            pass
 
     def scan(self, caminhos, bloqueadas=None):
-        self._arquivos = []
+        self._arquivos.clear()
 
         if isinstance(caminhos, (str, Path)):
             caminhos = [caminhos]
 
-        pastasBloqueadas = set(Path(p).resolve() for p in (bloqueadas or []))
+        # adiciona bloqueadas passadas no scan()
+        if bloqueadas:
+            self._bloqueadas |= {
+                Path(p).resolve()
+                for p in bloqueadas
+            }
 
         for caminho in caminhos:
-            for arquivo in Path(caminho).rglob("*"):
-
-                # BLACKLIST verdadeira
-                if any(b in arquivo.resolve().parents for b in pastasBloqueadas):
-                    continue
-
-                # Windows only — corrigido
-                if hasattr(arquivo, "is_reserved") and arquivo.is_reserved():
-                    self._arquivos.append("arquivo do sistema")
-                    continue
-
-                # ERRO QUE VOCÊ COMETEU — agora corrigido!
-                if arquivo.is_symlink():
-                    self._arquivos.append("arquivo do sistema")
-                    continue
-
-                if self.isSystem(arquivo):
-                    self._arquivos.append("arquivo do sistema")
-                    continue
-
-                if arquivo.is_file():
-                    self._arquivos.append(arquivo)
+            self._scan_dir(Path(caminho).resolve())
 
         return self._arquivos
 
     def __len__(self):
         return len(self._arquivos)
-    
-#Depuração    
-def run():
-    
-    pass
-    

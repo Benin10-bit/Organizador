@@ -10,7 +10,7 @@ CATEGORIES_WINDOWS = {
         ".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".mpeg", ".mpg",".webm", ".3gp"
     ],
     "Documentos": [
-        ".pdf", ".docx", ".doc", ".pptx", ".ppt", ".xlsx", ".xls",".rtf", ".txt", ".md", ".csv", ".json", ".xml", ".yaml", ".yml"
+        ".pdf", ".docx",".docx#", ".doc", ".pptx", ".ppt", ".xlsx", ".xls",".rtf", ".txt", ".md", ".csv", ".json", ".xml", ".yaml", ".yml"
     ],
     "Áudio": [
         ".mp3", ".wav", ".aac", ".flac", ".ogg", ".wma", ".m4a"

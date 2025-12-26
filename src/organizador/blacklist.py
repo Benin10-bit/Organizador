@@ -8,10 +8,15 @@ class BlackList():
 
     def addToBlackList(self, path):
         conteudo = self.readBlackList()
+
+        if str(path) in conteudo:
+            return "Caminho já existente na blacklist"
+
         conteudo.append(str(path))
         
         with open(self.BLACKLISTPATH, "w") as blacklist:
             json.dump(conteudo, blacklist, indent=4, ensure_ascii=False)
+        
 
     def readBlackList(self):
         try:

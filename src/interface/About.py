@@ -1,5 +1,4 @@
 import customtkinter as ctk
-from interface.provi import Home
 
 
 class Resumo(ctk.CTkFrame):
@@ -7,78 +6,6 @@ class Resumo(ctk.CTkFrame):
         # Inicializa o frame principal com fundo preto
         super().__init__(master, fg_color="#000000")
         self.master = master
-
-        # ========================= SIDEBAR =========================
-        # Barra lateral fixa à esquerda
-        sidebar = ctk.CTkFrame(self, width=220, fg_color="#0a0a0a", corner_radius=0)
-        sidebar.pack(side="left", fill="y")
-        sidebar.pack_propagate(False)  # Impede redimensionamento interno
-
-        # Frame do logo
-        logo_frame = ctk.CTkFrame(sidebar, fg_color="transparent")
-        logo_frame.pack(pady=30, padx=20)
-        
-        # Ícone grande do logo
-        logo_icon = ctk.CTkLabel(logo_frame, text="⚡", font=ctk.CTkFont(size=40))
-        logo_icon.pack()
-        
-        # Título da aplicação
-        title = ctk.CTkLabel(sidebar, text="Organize Aí", 
-                            font=ctk.CTkFont(size=24, weight="bold"),
-                            text_color="#3b82f6")
-        title.pack(pady=(0, 5))
-        
-        # Subtítulo
-        subtitle = ctk.CTkLabel(sidebar, text="File Organizer", 
-                               font=ctk.CTkFont(size=12),
-                               text_color="#6b7280")
-        subtitle.pack(pady=(0, 40))
-
-        # Linha separadora
-        separator = ctk.CTkFrame(sidebar, height=1, fg_color="#1a1a1a")
-        separator.pack(fill="x", padx=20, pady=10)
-
-        # Botão: voltar ao início
-        btn_home = ctk.CTkButton(sidebar, 
-                                text="🏠  Início",
-                                command=lambda: master.mostrarPagina(Home),
-                                font=ctk.CTkFont(size=15),
-                                fg_color="transparent",
-                                hover_color="#1a1a1a",
-                                anchor="w",
-                                height=45)
-        btn_home.pack(pady=5, padx=20, fill="x")
-
-        # Botão: ir para estatísticas
-        from interface.Statistics import Statistics
-        btn_relatorios = ctk.CTkButton(sidebar, 
-                                      text="📊  Relatórios",
-                                      command=lambda: master.mostrarPagina(Statistics),
-                                      font=ctk.CTkFont(size=15),
-                                      fg_color="transparent",
-                                      hover_color="#1a1a1a",
-                                      anchor="w",
-                                      height=45)
-        btn_relatorios.pack(pady=5, padx=20, fill="x")
-        
-        # Botão atual: Sobre
-        btn_sobre = ctk.CTkButton(sidebar, 
-                                 text="ℹ️  Sobre",
-                                 command=lambda: master.mostrarPagina(Resumo),
-                                 font=ctk.CTkFont(size=15),
-                                 fg_color="#1a1a1a",
-                                 hover_color="#2a2a2a",
-                                 anchor="w",
-                                 height=45,
-                                 border_width=1,
-                                 border_color="#3b82f6")
-        btn_sobre.pack(pady=5, padx=20, fill="x")
-
-        # Versão no rodapé da sidebar
-        version_label = ctk.CTkLabel(sidebar, text="v2.0", 
-                                    font=ctk.CTkFont(size=11),
-                                    text_color="#3a3a3a")
-        version_label.pack(side="bottom", pady=20)
 
         # ========================= ÁREA COM SCROLL =========================
         # Área principal com scroll
@@ -245,18 +172,6 @@ class Resumo(ctk.CTkFrame):
                                    text_color="#e0e0e0")
         version_text.pack(pady=12, padx=15)
 
-        # ========================= BOTÃO VOLTAR =========================
-        btn_voltar = ctk.CTkButton(content,
-                                  text="← Voltar ao Início",
-                                  command=lambda: master.mostrarPagina(Home),
-                                  width=200,
-                                  height=50,
-                                  font=ctk.CTkFont(size=15, weight="bold"),
-                                  fg_color="#3b82f6",
-                                  hover_color="#2563eb",
-                                  corner_radius=10,
-                                  text_color="#ffffff")
-        btn_voltar.pack(pady=40)
 
     # ========================= FUNÇÕES DE COMPONENTES =========================
     def _make_hero_section(self, parent):

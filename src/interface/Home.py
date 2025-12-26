@@ -5,714 +5,530 @@ import time
 
 from organizador.scanner import Scanner
 from organizador.classifier import classify
-from organizador.blacklist import BlackList
-
+from organizador.mover import Mover
 
 class Home(ctk.CTkFrame):
     def __init__(self, master):
+        # Inicializa o frame principal com fundo preto
         super().__init__(master, fg_color="#000000")
-
         self.master = master
-        self.scanner = Scanner()
-        self.blacklist = BlackList()
-        self.tempo_inicio = None
-        self.tempo_decorrido = 0
-        self.arquivos_scanneados = 0
-        self.scanning = False
-
-        # Container principal com gradiente simulado
-        container = ctk.CTkFrame(self, fg_color="transparent")
-        container.pack(fill="both", expand=True, padx=25, pady=25)
-
-        # Menu lateral
-        self.criar_menu_lateral(container)
-
-        # Área de conteúdo
-        self.criar_area_conteudo(container)
-
-    def criar_menu_lateral(self, parent):
-        """Menu lateral com design premium"""
-        menuLateral = ctk.CTkFrame(
-            parent, 
-            width=260, 
-            fg_color="#0a0a0a", 
-            corner_radius=20,
-            border_width=1,
-            border_color="#1a1a1a"
-        )
-        menuLateral.pack(side="left", fill="y", padx=(0, 25))
-        menuLateral.pack_propagate(False)
-
-        # Header do menu com gradiente visual
-        headerFrame = ctk.CTkFrame(menuLateral, fg_color="transparent")
-        headerFrame.pack(pady=40, padx=25)
-
-        # Ícone com fundo
-        iconFrame = ctk.CTkFrame(
-            headerFrame, 
-            fg_color="#1a1a1a",
-            corner_radius=15,
-            width=70,
-            height=70
-        )
-        iconFrame.pack()
-        iconFrame.pack_propagate(False)
-
-        ctk.CTkLabel(
-            iconFrame,
-            text="📁",
-            font=ctk.CTkFont(size=36)
-        ).pack(expand=True)
-
-        ctk.CTkLabel(
-            headerFrame,
-            text="Organize Aí",
-            font=ctk.CTkFont(size=24, weight="bold"),
-            text_color="#ffffff"
-        ).pack(pady=(20, 5))
-
-        ctk.CTkLabel(
-            headerFrame,
-            text="Sistema de Organização v2.0",
-            font=ctk.CTkFont(size=11),
-            text_color="#555555"
-        ).pack()
-
-        # Separador com gradiente
-        separadorFrame = ctk.CTkFrame(menuLateral, fg_color="transparent", height=50)
-        separadorFrame.pack(fill="x", padx=25)
-        separadorFrame.pack_propagate(False)
         
-        ctk.CTkFrame(
-            separadorFrame, 
-            height=1, 
-            fg_color="#1a1a1a"
-        ).pack(pady=25)
-
-        # Seção de navegação
-        ctk.CTkLabel(
-            menuLateral,
-            text="NAVEGAÇÃO",
-            font=ctk.CTkFont(size=10, weight="bold"),
-            text_color="#444444",
-            anchor="w"
-        ).pack(padx=25, pady=(0, 10), anchor="w")
-
-        # Botão de navegação estilizado
-        from interface.Statistics import Statistics
+        # ========================= VARIÁVEIS DE CONTROLE =========================
+        self.caminho_selecionado = None  # Armazena o caminho da pasta selecionada
+        self.operacao_em_andamento = False  # Flag para controlar se há operação rodando
+        self.tempo_inicio = None  # Marca o tempo de início da operação
+        self.arquivos_varridos = 0  # Contador de arquivos processados
         
-        btnRelatorios = ctk.CTkButton(
-            menuLateral,
-            text="📊  Relatórios",
-            command=lambda: self.master.mostrarPagina(Statistics),
-            fg_color="#1a1a1a",
-            hover_color="#2a2a2a",
-            text_color="#aaaaaa",
-            font=ctk.CTkFont(size=14, weight="bold"),
-            height=50,
-            anchor="w",
-            corner_radius=12,
-            border_width=1,
-            border_color="#252525"
-        )
-        btnRelatorios.pack(pady=5, padx=25, fill="x")
+        # Stages configuráveis: (nome, peso relativo no progresso total)
+        # Para adicionar etapas, basta alterar esta lista.
+        self.stages = [
+            ("Varredura de Arquivos", 0.3),
+            ("Classificação de Arquivos", 0.3),
+            ("Movimentação de Arquivos", 0.4)  
+        ]
+        self.stage_index = 0
+        self.stage_progress = 0.0  # 0..1 dentro da etapa atual
 
-        # Espaçador
-        ctk.CTkFrame(menuLateral, fg_color="transparent").pack(expand=True)
+        # ========================= ÁREA PRINCIPAL COM SCROLL =========================
+        # Frame com scroll para todo o conteúdo principal
+        scroll = ctk.CTkScrollableFrame(self, 
+                                       fg_color="#000000", 
+                                       corner_radius=0,
+                                       scrollbar_button_color="#1a1a1a",
+                                       scrollbar_button_hover_color="#2a2a2a")
+        scroll.pack(side="left", fill="both", expand=True)
 
-        # Footer com info
-        footerFrame = ctk.CTkFrame(menuLateral, fg_color="#0f0f0f", corner_radius=12, height=80)
-        footerFrame.pack(fill="x", padx=25, pady=25)
-        footerFrame.pack_propagate(False)
+        # Container centralizado para todo o conteúdo
+        content = ctk.CTkFrame(scroll, fg_color="transparent")
+        content.pack(fill="both", expand=True, padx=40, pady=40)
 
-        ctk.CTkLabel(
-            footerFrame,
-            text="💡",
-            font=ctk.CTkFont(size=20)
-        ).pack(pady=(12, 5))
+        # ========================= HEADER =========================
+        # Cabeçalho da página com título e descrição
+        header_frame = ctk.CTkFrame(content, fg_color="transparent")
+        header_frame.pack(fill="x", pady=(0, 30))
 
-        ctk.CTkLabel(
-            footerFrame,
-            text="Organize seus arquivos\ncom inteligência",
-            font=ctk.CTkFont(size=10),
-            text_color="#555555",
-            justify="center"
-        ).pack()
-
-    def criar_area_conteudo(self, parent):
-        """Área principal de conteúdo"""
-        areaConteudo = ctk.CTkFrame(parent, fg_color="transparent")
-        areaConteudo.pack(side="left", fill="both", expand=True)
-
-        # Header com título e subtítulo
-        headerConteudo = ctk.CTkFrame(areaConteudo, fg_color="transparent", height=100)
-        headerConteudo.pack(fill="x", pady=(0, 25))
-        headerConteudo.pack_propagate(False)
-
-        ctk.CTkLabel(
-            headerConteudo,
-            text="Scanner de Diretórios",
-            font=ctk.CTkFont(size=32, weight="bold"),
-            text_color="#ffffff",
-            anchor="w"
-        ).pack(side="top", anchor="w", pady=(10, 0))
-
-        ctk.CTkLabel(
-            headerConteudo,
-            text="Analise e organize seus arquivos de forma inteligente",
-            font=ctk.CTkFont(size=13),
-            text_color="#666666",
-            anchor="w"
-        ).pack(side="top", anchor="w", pady=(5, 0))
-
-        # Cards de estatísticas
-        self.criar_cards_stats(areaConteudo)
-
-        # Seleção de pasta
-        self.criar_selecao_pasta(areaConteudo)
-
-        # Barra de progresso
-        self.criar_barra_progresso(areaConteudo)
-
-        # Área de logs
-        self.criar_area_logs(areaConteudo)
-
-    def criar_cards_stats(self, parent):
-        """Cards com estatísticas premium"""
-        cardsFrame = ctk.CTkFrame(parent, fg_color="transparent", height=140)
-        cardsFrame.pack(fill="x", pady=(0, 25))
-        cardsFrame.pack_propagate(False)
-
-        # Card 1: Tempo
-        card1 = ctk.CTkFrame(
-            cardsFrame, 
-            fg_color="#0a0a0a", 
-            corner_radius=16,
-            border_width=1,
-            border_color="#1a1a1a"
-        )
-        card1.pack(side="left", fill="both", expand=True, padx=(0, 12))
-
-        # Mini header do card
-        ctk.CTkLabel(
-            card1,
-            text="TEMPO DECORRIDO",
-            font=ctk.CTkFont(size=10, weight="bold"),
-            text_color="#444444",
-            anchor="w"
-        ).pack(pady=(18, 5), padx=20, anchor="w")
-
-        # Valor principal
-        timeFrame = ctk.CTkFrame(card1, fg_color="transparent")
-        timeFrame.pack(fill="x", padx=20)
-
-        ctk.CTkLabel(
-            timeFrame,
-            text="⏱️",
-            font=ctk.CTkFont(size=20)
-        ).pack(side="left", padx=(0, 10))
-
-        self.labelTempo = ctk.CTkLabel(
-            timeFrame,
-            text="0s",
-            font=ctk.CTkFont(size=28, weight="bold"),
-            text_color="#3b82f6"
-        )
-        self.labelTempo.pack(side="left")
-
-        # Card 2: Arquivos
-        card2 = ctk.CTkFrame(
-            cardsFrame, 
-            fg_color="#0a0a0a", 
-            corner_radius=16,
-            border_width=1,
-            border_color="#1a1a1a"
-        )
-        card2.pack(side="left", fill="both", expand=True, padx=(6, 12))
-
-        ctk.CTkLabel(
-            card2,
-            text="ARQUIVOS PROCESSADOS",
-            font=ctk.CTkFont(size=10, weight="bold"),
-            text_color="#444444",
-            anchor="w"
-        ).pack(pady=(18, 5), padx=20, anchor="w")
-
-        filesFrame = ctk.CTkFrame(card2, fg_color="transparent")
-        filesFrame.pack(fill="x", padx=20)
-
-        ctk.CTkLabel(
-            filesFrame,
-            text="📄",
-            font=ctk.CTkFont(size=20)
-        ).pack(side="left", padx=(0, 10))
-
-        self.labelArquivos = ctk.CTkLabel(
-            filesFrame,
-            text="0",
-            font=ctk.CTkFont(size=28, weight="bold"),
-            text_color="#3b82f6"
-        )
-        self.labelArquivos.pack(side="left")
-
-        # Card 3: Status
-        card3 = ctk.CTkFrame(
-            cardsFrame, 
-            fg_color="#0a0a0a", 
-            corner_radius=16,
-            border_width=1,
-            border_color="#1a1a1a"
-        )
-        card3.pack(side="left", fill="both", expand=True, padx=(6, 0))
-
-        ctk.CTkLabel(
-            card3,
-            text="STATUS DO SISTEMA",
-            font=ctk.CTkFont(size=10, weight="bold"),
-            text_color="#444444",
-            anchor="w"
-        ).pack(pady=(18, 5), padx=20, anchor="w")
-
-        statusFrame = ctk.CTkFrame(card3, fg_color="transparent")
-        statusFrame.pack(fill="x", padx=20)
-
-        self.statusIcon = ctk.CTkLabel(
-            statusFrame,
-            text="⚪",
-            font=ctk.CTkFont(size=20)
-        )
-        self.statusIcon.pack(side="left", padx=(0, 10))
-
-        self.labelStatus = ctk.CTkLabel(
-            statusFrame,
-            text="Aguardando",
-            font=ctk.CTkFont(size=28, weight="bold"),
-            text_color="#666666"
-        )
-        self.labelStatus.pack(side="left")
-
-    def criar_selecao_pasta(self, parent):
-        """Seleção de pasta com design premium"""
-        selecaoFrame = ctk.CTkFrame(
-            parent, 
-            fg_color="#0a0a0a", 
-            corner_radius=16,
-            border_width=1,
-            border_color="#1a1a1a",
-            height=220
-        )
-        selecaoFrame.pack(fill="x", pady=(0, 25))
-        selecaoFrame.pack_propagate(False)
-
-        # Header interno
-        ctk.CTkLabel(
-            selecaoFrame,
-            text="SELEÇÃO DE DIRETÓRIO",
-            font=ctk.CTkFont(size=11, weight="bold"),
-            text_color="#444444",
-            anchor="w"
-        ).pack(pady=(25, 5), padx=25, anchor="w")
-
-        ctk.CTkLabel(
-            selecaoFrame,
-            text="Escolha o diretório que deseja organizar",
-            font=ctk.CTkFont(size=12),
-            text_color="#666666",
-            anchor="w"
-        ).pack(pady=(0, 15), padx=25, anchor="w")
-
-        # Frame de entrada estilizado
-        entradaContainer = ctk.CTkFrame(
-            selecaoFrame, 
-            fg_color="#050505",
-            corner_radius=12,
-            border_width=2,
-            border_color="#1a1a1a",
-            height=55
-        )
-        entradaContainer.pack(fill="x", padx=25, pady=(0, 15))
-        entradaContainer.pack_propagate(False)
-
-        self.entrada = ctk.CTkEntry(
-            entradaContainer,
-            placeholder_text="📂  Nenhum caminho selecionado...",
-            fg_color="transparent",
-            border_width=0,
-            font=ctk.CTkFont(size=13),
-            text_color="#ffffff",
-            state="readonly"
-        )
-        self.entrada.pack(side="left", fill="both", expand=True, padx=15, pady=12)
-
-        ctk.CTkButton(
-            entradaContainer,
-            width=120,
-            height=40,
-            text="Procurar",
-            command=self.selectDir,
-            fg_color="#1a1a1a",
-            hover_color="#2a2a2a",
-            font=ctk.CTkFont(size=12, weight="bold"),
-            corner_radius=8,
-            border_width=1,
-            border_color="#2a2a2a"
-        ).pack(side="right", padx=8, pady=8)
-
-        # Botão de scan PREMIUM com efeito 3D
-        btnContainer = ctk.CTkFrame(
-            selecaoFrame,
-            fg_color="transparent",
-            height=90
-        )
-        btnContainer.pack(fill="x", padx=40, pady=(0, 25))
-        btnContainer.pack_propagate(False)
+        # Container do ícone principal com borda
+        icon_container = ctk.CTkFrame(header_frame, width=80, height=80, 
+                                     fg_color="#0a0a0a", 
+                                     corner_radius=20,
+                                     border_width=2,
+                                     border_color="#3b82f6")
+        icon_container.pack()
+        icon_container.pack_propagate(False)
         
-        # Sombra do botão (efeito de profundidade)
-        btnShadow = ctk.CTkFrame(
-            btnContainer,
-            fg_color="#1a3a5c",
-            corner_radius=16,
-            height=78
-        )
-        btnShadow.place(relx=0.5, rely=0.52, anchor="center", relwidth=0.70)
+        # Ícone de pasta
+        icon = ctk.CTkLabel(icon_container, text="📁", font=ctk.CTkFont(size=40))
+        icon.place(relx=0.5, rely=0.5, anchor="center")
+
+        # Título principal da página
+        titulo = ctk.CTkLabel(header_frame, 
+                             text="Organizador de Arquivos",
+                             font=ctk.CTkFont(size=40, weight="bold"),
+                             text_color="#ffffff")
+        titulo.pack(pady=(20, 8))
+
+        # Subtítulo descritivo
+        subtitulo = ctk.CTkLabel(header_frame,
+                                text="Selecione uma pasta e organize seus arquivos automaticamente",
+                                font=ctk.CTkFont(size=18),
+                                text_color="#9ca3af")
+        subtitulo.pack()
+
+        # ========================= SELEÇÃO DE PASTA =========================
+        # Card para seleção do caminho da pasta
+        selecao_card = ctk.CTkFrame(content, 
+                                   fg_color="#0a0a0a", 
+                                   corner_radius=12, 
+                                   border_width=1, 
+                                   border_color="#1a1a1a")
+        selecao_card.pack(fill="x", pady=(0, 20))
+
+        selecao_inner = ctk.CTkFrame(selecao_card, fg_color="transparent")
+        selecao_inner.pack(fill="x", padx=30, pady=25)
+
+        # Label do campo de seleção
+        selecao_label = ctk.CTkLabel(selecao_inner,
+                                     text="📂  Pasta para Organizar",
+                                     font=ctk.CTkFont(size=18, weight="bold"),
+                                     text_color="#ffffff")
+        selecao_label.pack(anchor="w", pady=(0, 15))
+
+        # Frame horizontal para input e botão
+        selecao_row = ctk.CTkFrame(selecao_inner, fg_color="transparent")
+        selecao_row.pack(fill="x")
+
+        # Campo de texto mostrando o caminho selecionado
+        self.entrada_caminho = ctk.CTkEntry(selecao_row,
+                                           placeholder_text="Nenhuma pasta selecionada...",
+                                           height=45,
+                                           font=ctk.CTkFont(size=14),
+                                           fg_color="#000000",
+                                           border_color="#1a1a1a",
+                                           state="disabled")  # Desabilitado para não editar manualmente
+        self.entrada_caminho.pack(side="left", fill="x", expand=True, padx=(0, 10))
+
+        # Botão para abrir o seletor de pasta
+        btn_selecionar = ctk.CTkButton(selecao_row,
+                                      text="Selecionar Pasta",
+                                      command=self.selecionar_pasta,
+                                      width=180,
+                                      height=45,
+                                      font=ctk.CTkFont(size=14, weight="bold"),
+                                      fg_color="#3b82f6",
+                                      hover_color="#2563eb")
+        btn_selecionar.pack(side="left")
+
+        # ========================= BARRAS DE PROGRESSO =========================
+        # Card contendo as etapas de progresso (USANDO UMA BARRA UNIFICADA)
+        progresso_card = ctk.CTkFrame(content, 
+                                     fg_color="#0a0a0a", 
+                                     corner_radius=12, 
+                                     border_width=1, 
+                                     border_color="#1a1a1a")
+        progresso_card.pack(fill="x", pady=(0, 20))
+
+        progresso_inner = ctk.CTkFrame(progresso_card, fg_color="transparent")
+        progresso_inner.pack(fill="x", padx=30, pady=25)
+
+        # Título da seção de progresso
+        progresso_titulo = ctk.CTkLabel(progresso_inner,
+                                       text="📊  Progresso da Operação",
+                                       font=ctk.CTkFont(size=18, weight="bold"),
+                                       text_color="#ffffff")
+        progresso_titulo.pack(anchor="w", pady=(0, 20))
+
+        # Label que mostra a etapa atual (visível acima da barra unificada)
+        self.label_etapa = ctk.CTkLabel(progresso_inner,
+                                       text="Etapa: Aguardando",
+                                       font=ctk.CTkFont(size=14),
+                                       text_color="#d1d5db")
+        self.label_etapa.pack(anchor="w", pady=(0, 8))
+
+        # Barra de progresso unificada (total)
+        self.progress_total = ctk.CTkProgressBar(progresso_inner,
+                                                height=20,
+                                                fg_color="#1a1a1a",
+                                                progress_color="#3b82f6")
+        self.progress_total.pack(fill="x", pady=(0, 25))
+        self.progress_total.set(0)
+
+        # ========================= CARDS DE ESTATÍSTICAS =========================
+        # Container horizontal para os 3 cards de info
+        stats_row = ctk.CTkFrame(content, fg_color="transparent")
+        stats_row.pack(fill="x", pady=(0, 20))
+
+        # --- CARD 1: TEMPO DECORRIDO ---
+        card_tempo = ctk.CTkFrame(stats_row, 
+                                 fg_color="#0a0a0a", 
+                                 corner_radius=12,
+                                 border_width=1,
+                                 border_color="#1a1a1a")
+        card_tempo.pack(side="left", expand=True, fill="both", padx=(0, 10))
+
+        tempo_inner = ctk.CTkFrame(card_tempo, fg_color="transparent")
+        tempo_inner.pack(fill="both", padx=25, pady=20)
+
+        # Ícone de relógio
+        tempo_icon = ctk.CTkLabel(tempo_inner, text="⏱️", font=ctk.CTkFont(size=32))
+        tempo_icon.pack(pady=(0, 10))
+
+        # Valor do tempo (atualizado dinamicamente)
+        self.label_tempo_valor = ctk.CTkLabel(tempo_inner,
+                                             text="0.0s",
+                                             font=ctk.CTkFont(size=28, weight="bold"),
+                                             text_color="#3b82f6")
+        self.label_tempo_valor.pack()
+
+        # Descrição do card
+        tempo_desc = ctk.CTkLabel(tempo_inner,
+                                 text="Tempo Decorrido",
+                                 font=ctk.CTkFont(size=13),
+                                 text_color="#9ca3af")
+        tempo_desc.pack(pady=(5, 0))
+
+        # --- CARD 2: ARQUIVOS VARRIDOS ---
+        card_arquivos = ctk.CTkFrame(stats_row, 
+                                    fg_color="#0a0a0a", 
+                                    corner_radius=12,
+                                    border_width=1,
+                                    border_color="#1a1a1a")
+        card_arquivos.pack(side="left", expand=True, fill="both", padx=5)
+
+        arquivos_inner = ctk.CTkFrame(card_arquivos, fg_color="transparent")
+        arquivos_inner.pack(fill="both", padx=25, pady=20)
+
+        # Ícone de documentos
+        arquivos_icon = ctk.CTkLabel(arquivos_inner, text="📄", font=ctk.CTkFont(size=32))
+        arquivos_icon.pack(pady=(0, 10))
+
+        # Valor da quantidade (atualizado dinamicamente)
+        self.label_arquivos_valor = ctk.CTkLabel(arquivos_inner,
+                                                text="0",
+                                                font=ctk.CTkFont(size=28, weight="bold"),
+                                                text_color="#10b981")
+        self.label_arquivos_valor.pack()
+
+        # Descrição do card
+        arquivos_desc = ctk.CTkLabel(arquivos_inner,
+                                    text="Arquivos Varridos",
+                                    font=ctk.CTkFont(size=13),
+                                    text_color="#9ca3af")
+        arquivos_desc.pack(pady=(5, 0))
+
+        # --- CARD 3: STATUS DA OPERAÇÃO ---
+        card_status = ctk.CTkFrame(stats_row, 
+                                  fg_color="#0a0a0a", 
+                                  corner_radius=12,
+                                  border_width=1,
+                                  border_color="#1a1a1a")
+        card_status.pack(side="left", expand=True, fill="both", padx=(10, 0))
+
+        status_inner = ctk.CTkFrame(card_status, fg_color="transparent")
+        status_inner.pack(fill="both", padx=25, pady=20)
+
+        # Ícone de status (muda conforme o estado)
+        self.status_icon = ctk.CTkLabel(status_inner, text="⏸️", font=ctk.CTkFont(size=32))
+        self.status_icon.pack(pady=(0, 10))
+
+        # Valor do status (atualizado dinamicamente)
+        self.label_status_valor = ctk.CTkLabel(status_inner,
+                                              text="Aguardando",
+                                              font=ctk.CTkFont(size=28, weight="bold"),
+                                              text_color="#f59e0b")
+        self.label_status_valor.pack()
+
+        # Descrição do card
+        status_desc = ctk.CTkLabel(status_inner,
+                                  text="Status",
+                                  font=ctk.CTkFont(size=13),
+                                  text_color="#9ca3af")
+        status_desc.pack(pady=(5, 0))
+
+        # ========================= BOTÃO INICIAR =========================
+        # Botão grande para iniciar a operação
+        self.btn_iniciar = ctk.CTkButton(content,
+                                        text="▶  Iniciar Organização",
+                                        command=self.iniciar_organizacao,
+                                        height=55,
+                                        font=ctk.CTkFont(size=16, weight="bold"),
+                                        fg_color="#10b981",
+                                        hover_color="#059669",
+                                        corner_radius=10)
+        self.btn_iniciar.pack(fill="x", pady=(0, 20))
+
+        # ========================= LOG DE OPERAÇÕES =========================
+        # Card contendo o log de todas as operações
+        log_card = ctk.CTkFrame(content, 
+                               fg_color="#0a0a0a", 
+                               corner_radius=12, 
+                               border_width=1, 
+                               border_color="#1a1a1a")
+        log_card.pack(fill="both", expand=True)
+
+        log_inner = ctk.CTkFrame(log_card, fg_color="transparent")
+        log_inner.pack(fill="both", padx=30, pady=25)
+
+        # Cabeçalho do log
+        log_header = ctk.CTkFrame(log_inner, fg_color="transparent")
+        log_header.pack(fill="x", pady=(0, 15))
+
+        log_titulo = ctk.CTkLabel(log_header,
+                                 text="📝  Log de Operações",
+                                 font=ctk.CTkFont(size=18, weight="bold"),
+                                 text_color="#ffffff")
+        log_titulo.pack(side="left")
+
+        # Botão para limpar o log
+        btn_limpar_log = ctk.CTkButton(log_header,
+                                      text="Limpar Log",
+                                      command=self.limpar_log,
+                                      width=120,
+                                      height=32,
+                                      font=ctk.CTkFont(size=12),
+                                      fg_color="transparent",
+                                      hover_color="#1a1a1a",
+                                      border_width=1,
+                                      border_color="#1a1a1a")
+        btn_limpar_log.pack(side="right")
+
+        # Caixa de texto para o log (somente leitura)
+        self.log_textbox = ctk.CTkTextbox(log_inner,
+                                         height=300,
+                                         font=ctk.CTkFont(family="Consolas", size=12),
+                                         fg_color="#000000",
+                                         border_width=1,
+                                         border_color="#1a1a1a",
+                                         text_color="#d1d5db",
+                                         wrap="word")
+        self.log_textbox.pack(fill="both", expand=True)
         
-        # Botão principal
-        self.btnScan = ctk.CTkButton(
-            btnContainer,
-            height=75,
-            text="🚀  INICIAR SCANNER",
-            command=self.iniciarThreadScan,
-            fg_color="#3b82f6",
-            hover_color="#2563eb",
-            font=ctk.CTkFont(size=18, weight="bold"),
-            corner_radius=14,
-            border_width=0
-        )
-        self.btnScan.place(relx=0.5, rely=0.48, anchor="center", relwidth=0.67)
+        # Adiciona mensagem inicial ao log
+        self.adicionar_log("Sistema iniciado. Aguardando seleção de pasta...")
 
-    def criar_barra_progresso(self, parent):
-        """Barra de progresso premium"""
-        progressoFrame = ctk.CTkFrame(
-            parent, 
-            fg_color="#0a0a0a", 
-            corner_radius=16,
-            border_width=1,
-            border_color="#1a1a1a",
-            height=110
-        )
-        progressoFrame.pack(fill="x", pady=(0, 25))
-        progressoFrame.pack_propagate(False)
-
-        # Header
-        headerProg = ctk.CTkFrame(progressoFrame, fg_color="transparent")
-        headerProg.pack(fill="x", padx=25, pady=(20, 10))
-
-        ctk.CTkLabel(
-            headerProg,
-            text="PROGRESSO DO SCANNER",
-            font=ctk.CTkFont(size=11, weight="bold"),
-            text_color="#444444",
-            anchor="w"
-        ).pack(side="left")
-
-        self.labelProgresso = ctk.CTkLabel(
-            headerProg,
-            text="0%",
-            font=ctk.CTkFont(size=16, weight="bold"),
-            text_color="#3b82f6"
-        )
-        self.labelProgresso.pack(side="right")
-
-        # Barra customizada com fundo
-        progressoOuter = ctk.CTkFrame(
-            progressoFrame,
-            fg_color="#050505",
-            corner_radius=10,
-            height=30,
-            border_width=1,
-            border_color="#1a1a1a"
-        )
-        progressoOuter.pack(fill="x", padx=25, pady=(0, 20))
-        progressoOuter.pack_propagate(False)
-
-        self.progresso = ctk.CTkProgressBar(
-            progressoOuter,
-            height=20,
-            corner_radius=8,
-            fg_color="#050505",
-            progress_color="#3b82f6",
-            border_width=0
-        )
-        self.progresso.pack(fill="both", expand=True, padx=5, pady=5)
-        self.progresso.set(0)
-
-    def criar_area_logs(self, parent):
-        """Área de logs estilo terminal profissional"""
-        logsFrame = ctk.CTkFrame(
-            parent, 
-            fg_color="#0a0a0a", 
-            corner_radius=16,
-            border_width=1,
-            border_color="#1a1a1a"
-        )
-        logsFrame.pack(fill="both", expand=True)
-
-        # Header premium dos logs
-        headerLogs = ctk.CTkFrame(
-            logsFrame, 
-            fg_color="#050505",
-            corner_radius=0,
-            height=65,
-            border_width=0
-        )
-        headerLogs.pack(fill="x")
-        headerLogs.pack_propagate(False)
-
-        headerContent = ctk.CTkFrame(headerLogs, fg_color="transparent")
-        headerContent.pack(fill="both", expand=True, padx=25, pady=15)
-
-        leftHeader = ctk.CTkFrame(headerContent, fg_color="transparent")
-        leftHeader.pack(side="left", fill="y")
-
-        ctk.CTkLabel(
-            leftHeader,
-            text="REGISTRO DE ATIVIDADES",
-            font=ctk.CTkFont(size=11, weight="bold"),
-            text_color="#444444",
-            anchor="w"
-        ).pack(side="top", anchor="w")
-
-        ctk.CTkLabel(
-            leftHeader,
-            text="Monitor em tempo real",
-            font=ctk.CTkFont(size=10),
-            text_color="#555555",
-            anchor="w"
-        ).pack(side="top", anchor="w", pady=(2, 0))
-
-        # Botões de controle
-        botoesFrame = ctk.CTkFrame(headerContent, fg_color="transparent")
-        botoesFrame.pack(side="right")
-
-        ctk.CTkButton(
-            botoesFrame,
-            text="🔄",
-            width=40,
-            height=35,
-            command=self.scroll_to_bottom,
-            fg_color="#1a1a1a",
-            hover_color="#2a2a2a",
-            font=ctk.CTkFont(size=14),
-            corner_radius=8,
-            border_width=1,
-            border_color="#252525"
-        ).pack(side="left", padx=(0, 8))
-
-        ctk.CTkButton(
-            botoesFrame,
-            text="🗑️  Limpar",
-            width=100,
-            height=35,
-            command=self.limpar_logs,
-            fg_color="#1a1a1a",
-            hover_color="#2a2a2a",
-            font=ctk.CTkFont(size=11, weight="bold"),
-            corner_radius=8,
-            border_width=1,
-            border_color="#252525"
-        ).pack(side="left")
-
-        # Separador
-        ctk.CTkFrame(logsFrame, height=1, fg_color="#1a1a1a").pack(fill="x")
-
-        # Container do textbox
-        logContainer = ctk.CTkFrame(logsFrame, fg_color="#000000", corner_radius=0)
-        logContainer.pack(fill="both", expand=True, padx=2, pady=2)
-
-        # Textbox estilizado
-        self.logBox = ctk.CTkTextbox(
-            logContainer,
-            fg_color="#000000",
-            corner_radius=0,
-            font=ctk.CTkFont(family="Consolas", size=12),
-            text_color="#94a3b8",
-            wrap="word",
-            border_width=0,
-            scrollbar_button_color="#1a1a1a",
-            scrollbar_button_hover_color="#2a2a2a"
-        )
-        self.logBox.pack(fill="both", expand=True, padx=20, pady=20)
-        self.logBox.configure(state="disabled")
-
-        # Log inicial estilizado
-        self.log_styled("[SISTEMA]", "Sistema iniciado com sucesso", "#3b82f6")
-        self.log_styled("[INFO]", "Aguardando seleção de diretório...", "#64748b")
-
-    # ========================================================
-    # THREAD E TIMER
-    # ========================================================
-
-    def iniciarThreadScan(self):
-        if self.scanning:
-            return
-        threading.Thread(target=self.scanCompleto, daemon=True).start()
-        threading.Thread(target=self.atualizar_timer, daemon=True).start()
-
-    def atualizar_timer(self):
-        """Atualiza o timer enquanto o scan está ativo"""
-        while self.scanning:
-            elapsed = time.time() - self.tempo_inicio
-            segundos = int(elapsed)
+    # ========================= MÉTODOS DE CONTROLE =========================
+    
+    def selecionar_pasta(self):
+        """Abre o diálogo para selecionar uma pasta e atualiza a interface"""
+        # Abre o file dialog para escolher uma pasta
+        pasta = filedialog.askdirectory(title="Selecione a pasta para organizar")
+        
+        if pasta:  # Se o usuário selecionou algo
+            self.caminho_selecionado = pasta
+            # Habilita temporariamente o campo para atualizar o texto
+            self.entrada_caminho.configure(state="normal")
+            self.entrada_caminho.delete(0, "end")
+            self.entrada_caminho.insert(0, pasta)
+            self.entrada_caminho.configure(state="disabled")
             
-            tempo_str = f"{segundos}s"
-            self.labelTempo.configure(text=tempo_str)
-            time.sleep(0.5)
+            # Registra no log
+            self.adicionar_log(f"✓ Pasta selecionada: {pasta}")
+    
+    def adicionar_log(self, mensagem):
+        """Adiciona uma mensagem ao log com timestamp"""
+        # Formata a hora atual
+        timestamp = time.strftime("%H:%M:%S")
+        # Insere no textbox
+        self.log_textbox.insert("end", f"[{timestamp}] {mensagem}\n")
+        # Faz scroll automático para o fim
+        self.log_textbox.see("end")
+    
+    def limpar_log(self):
+        """Limpa todo o conteúdo do log"""
+        self.log_textbox.delete("1.0", "end")
+        self.adicionar_log("Log limpo.")
+    
+    def atualizar_status(self, status, cor, icone):
+        """Atualiza o card de status com novo texto, cor e ícone"""
+        self.label_status_valor.configure(text=status, text_color=cor)
+        self.status_icon.configure(text=icone)
+    
+    # ----------------- Helpers para stages/progresso unificado -----------------
+    def _set_stage(self, index):
+        """Seleciona a etapa atual pelo índice e zera o progresso interno."""
+        self.stage_index = index
+        self.stage_progress = 0.0
+        nome = self.stages[index][0] if 0 <= index < len(self.stages) else "Desconhecido"
+        self.after(0, lambda n=nome: self.label_etapa.configure(text=f"Etapa: {n}"))
+        # atualiza barra total imediatamente (reflete que etapa atual está em 0)
+        self._calculate_total_progress()
 
-    # ========================================================
-    # PROCESSAMENTO PRINCIPAL
-    # ========================================================
+    def _set_stage_progress(self, percentual):
+        """Atualiza progresso dentro da etapa atual (0..1)."""
+        self.stage_progress = max(0.0, min(1.0, percentual))
+        self._calculate_total_progress()
 
-    def scanCompleto(self):
-        caminho = self.entrada.get()
+    def _calculate_total_progress(self):
+        """Calcula progresso total ponderado e aplica na barra unificada."""
+        progresso = 0.0
+        for i, (_, peso) in enumerate(self.stages):
+            if i < self.stage_index:
+                progresso += peso
+            elif i == self.stage_index:
+                progresso += peso * self.stage_progress
+            else:
+                break
+        # garante 0..1
+        progresso = max(0.0, min(1.0, progresso))
+        self.after(0, lambda p=progresso: self.progress_total.set(p))
 
-        if caminho == "":
-            self.log_styled("[ERRO]", "Nenhum caminho selecionado", "#ef4444")
+    # ----------------- Fim helpers -----------------
+
+    def iniciar_organizacao(self):
+        """Inicia o processo de organização em uma thread separada"""
+        # Verifica se já há uma operação rodando
+        if self.operacao_em_andamento:
+            self.adicionar_log("⚠ Já existe uma operação em andamento!")
             return
-
-        self.scanning = True
-        self.tempo_inicio = time.time()
-        self.arquivos_scanneados = 0
         
-        self.btnScan.configure(
-            state="disabled", 
-            text="⌛  SCANNEANDO...",
-            fg_color="#334155",
-            hover_color="#334155"
-        )
-        self.labelStatus.configure(text="Scanneando", text_color="#3b82f6")
-        self.statusIcon.configure(text="🔵")
+        # Verifica se uma pasta foi selecionada
+        if not self.caminho_selecionado:
+            self.adicionar_log("⚠ Por favor, selecione uma pasta primeiro!")
+            return
         
-        self.log_styled("[INICIO]", f"Scanner iniciado em: {caminho}", "#3b82f6")
-        self.atualizarProgresso(0)
-
+        # Desabilita o botão para evitar cliques múltiplos
+        self.btn_iniciar.configure(state="disabled", text="Operação em Andamento...")
+        
+        # Inicia a operação em uma thread separada para não travar a interface
+        thread = threading.Thread(target=self.executar_organizacao, daemon=True)
+        thread.start()
+    
+    def executar_organizacao(self):
+        """Executa todo o processo de organização (roda em thread separada)"""
         try:
-            # 1) Scanner
-            bloqueados = self.blacklist.readBlackList()
-            arquivos = self.scanner.scan(caminho, bloqueados)
-            total = len(arquivos)
+            # Marca início da operação
+            self.operacao_em_andamento = True
+            self.tempo_inicio = time.time()
+            self.arquivos_varridos = 0
+            
+            # Reseta barra unificada e seleciona primeira etapa
+            self.after(0, lambda: self.progress_total.set(0))
+            self._set_stage(0)
+            
+            # Atualiza status
+            self.after(0, lambda: self.atualizar_status("Processando", "#3b82f6", "⚙️"))
+            self.adicionar_log("\n" + "="*60)
+            self.adicionar_log("🚀 INICIANDO ORGANIZAÇÃO")
+            self.adicionar_log("="*60)
+            
+            # ===== ETAPA 1: SCAN =====
+            self.adicionar_log("\n📂 ETAPA 1: Iniciando varredura de arquivos...")
+            
+            # Cria instância do scanner
+            scanner = Scanner()
+            
+            # Realiza o scan (isso pode demorar dependendo da pasta)
+            arquivos = scanner.scan(self.caminho_selecionado)
+            self.arquivos_varridos = len(arquivos)
+            
+            # marca varredura como concluída (progresso interno = 1)
+            self.after(0, lambda: self.label_arquivos_valor.configure(text=str(self.arquivos_varridos)))
+            self._set_stage_progress(1.0)
+            self.adicionar_log(f"✓ Varredura concluída: {self.arquivos_varridos} arquivos encontrados")
+            
+            # passa para próxima etapa (classificação)
+            next_index = min(self.stage_index + 1, len(self.stages) - 1)
+            self._set_stage(next_index)
+            
+            # ===== ETAPA 2: CLASSIFICAÇÃO =====
+            self.adicionar_log("\n🏷️ ETAPA 2: Iniciando classificação...")
+            
+            # Normaliza resultados da classificação em uma lista de dicts:
+            # {'path': '/full/path', 'category': 'Categoria opcional'}
+            results = []
+            arquivos_lista = list(arquivos)
+            total = len(arquivos_lista)
 
-            if total == 0:
-                self.log_styled("[INFO]", "Nenhum arquivo encontrado no diretório", "#fbbf24")
-                self.atualizarProgresso(1)
-                self.finalizar_scan()
-                return
+            # Tenta chamada "bulk" primeiro (se classifier aceitar lista e retornar resultados)
+            try:
+                bulk_res = classify(arquivos_lista)
+                if isinstance(bulk_res, list):
+                    # assume lista de dicts ou categorias; normaliza
+                    for entry in bulk_res:
+                        if isinstance(entry, dict):
+                            path = str(entry.get("path") or entry.get("file") or "")
+                            results.append({"path": path, "category": entry.get("category")})
+                        elif isinstance(entry, (str,)):
+                            # se classifier retornou apenas caminhos or categories, tentamos mapear por posição
+                            results.append({"path": str(entry), "category": None})
+                    # marca etapa completa
+                    self._set_stage_progress(1.0)
+                else:
+                    # Se bulk_res não é lista, considera que classify fez side-effect sem retorno util
+                    results = []
+            except TypeError:
+                # classify não aceita lista: itera por arquivo, captura retorno possível
+                if total == 0:
+                    self._set_stage_progress(1.0)
+                else:
+                    batch = max(1, total // 200)
+                    for i, arquivo in enumerate(arquivos_lista):
+                        try:
+                            res = classify(arquivo)
+                            if isinstance(res, dict):
+                                results.append({"path": str(arquivo), "category": res.get("category")})
+                            elif isinstance(res, str):
+                                results.append({"path": str(arquivo), "category": res})
+                            else:
+                                results.append({"path": str(arquivo), "category": None})
+                        except Exception as e:
+                            self.adicionar_log(f"⚠ Erro ao classificar '{arquivo}': {e}")
+                            results.append({"path": str(arquivo), "category": None})
+                        if (i % batch) == 0 or (i == total - 1):
+                            self._set_stage_progress((i + 1) / total)
 
-            self.log_styled("[SUCESSO]", f"{total} arquivos encontrados", "#22c55e")
-            self.log_styled("[PROCESSO]", "Iniciando classificação inteligente...", "#a78bfa")
+            # Se bulk não retornou resultados e results está vazio, ainda assim produz lista básica
+            if not results:
+                results = [{"path": str(p), "category": None} for p in arquivos_lista]
 
-            # 2) Classificação com progressão proporcional
-            categorias = []
-            for i, info in enumerate(classify(arquivos), start=1):
-                categorias.append(info)
-                
-                self.arquivos_scanneados = i
-                self.labelArquivos.configure(text=str(i))
-                
-                # progressão proporcional
-                progresso = i / total
-                self.atualizarProgresso(progresso)
-                
-                # log com cores
-                categoria = info['category']
-                nome = info['path'].name
-                
-                # Truncar nome se for muito longo
-                if len(nome) > 50:
-                    nome = nome[:47] + "..."
-                
-                self.log_styled("[SCAN]", f"{nome} → {categoria}", "#a78bfa")
+            self.adicionar_log(f"✓ Classificação concluída")
 
-            self.atualizarProgresso(1)
-            self.log_styled("[CONCLUÍDO]", f"Processo finalizado! {total} arquivos processados", "#22c55e")
-            self.labelStatus.configure(text="Concluído", text_color="#22c55e")
-            self.statusIcon.configure(text="🟢")
+            #==== ETAPA 3: MOVIMENTAÇÃO =====
+            self._set_stage(next_index + 1)
+            self.adicionar_log("\n🚚 ETAPA 3: Iniciando movimentação")
 
+            # Cria instância do mover e passa a lista padronizada
+            mover = Mover()
+            try:
+                mover.fileMove(results)
+                self.adicionar_log("✓ Movimentação concluída")
+            except Exception as e:
+                self.adicionar_log(f"⚠ Erro ao mover arquivos: {e}")
+            self._set_stage_progress(1.0)   
+
+            # ===== FINALIZAÇÃO =====
+            tempo_total = time.time() - self.tempo_inicio
+            
+            # Atualiza tempo final usando after
+            self.after(0, lambda t=tempo_total: self.label_tempo_valor.configure(text=f"{t:.1f}s"))
+            
+            self.adicionar_log("\n" + "="*60)
+            self.adicionar_log(f"✅ OPERAÇÃO CONCLUÍDA COM SUCESSO!")
+            self.adicionar_log(f"⏱️ Tempo total: {tempo_total:.2f} segundos")
+            self.adicionar_log(f"📄 Total de arquivos: {self.arquivos_varridos}")
+            self.adicionar_log("="*60 + "\n")
+            
+            # Atualiza status final usando after
+            self.after(0, lambda: self.atualizar_status("Concluído", "#10b981", "✅"))
+            
         except Exception as e:
-            self.log_styled("[ERRO]", str(e), "#ef4444")
-            self.labelStatus.configure(text="Erro", text_color="#ef4444")
-            self.statusIcon.configure(text="🔴")
+            # Em caso de erro, registra no log
+            self.adicionar_log(f"\n❌ ERRO: {str(e)}")
+            self.after(0, lambda: self.atualizar_status("Erro", "#ef4444", "❌"))
         
         finally:
-            self.finalizar_scan()
-
-    def finalizar_scan(self):
-        """Finaliza o processo de scan"""
-        self.scanning = False
-        self.btnScan.configure(
-            state="normal", 
-            text="🚀  INICIAR SCANNER",
-            fg_color="#3b82f6",
-            hover_color="#2563eb"
-        )
-
-    # ========================================================
-    # INTERFACE
-    # ========================================================
-
-    def atualizarProgresso(self, valor):
-        """valor deve estar entre 0 e 1"""
-        self.progresso.set(valor)
-        percentual = int(valor * 100)
-        self.labelProgresso.configure(text=f"{percentual}%")
-
-    def log_styled(self, tag, msg, cor):
-        """Log estilizado profissional"""
-        self.logBox.configure(state="normal")
+            # Sempre reabilita o botão ao final usando after
+            self.operacao_em_andamento = False
+            self.after(0, lambda: self.btn_iniciar.configure(state="normal", text="▶  Iniciar Organização"))
+    
+    def update(self):
+        """Atualiza os valores em tempo real (chamado periodicamente)"""
+        # Atualiza o tempo decorrido se houver operação em andamento
+        if self.operacao_em_andamento and self.tempo_inicio:
+            tempo_decorrido = time.time() - self.tempo_inicio
+            self.label_tempo_valor.configure(text=f"{tempo_decorrido:.1f}s")
         
-        timestamp = time.strftime("%H:%M:%S")
+        # Atualiza contador de arquivos
+        self.label_arquivos_valor.configure(text=str(self.arquivos_varridos))
         
-        # Formatação premium
-        linha = f"┌─ [{timestamp}]\n│\n├─ {tag}\n│  {msg}\n└{'─' * 70}\n\n"
-        
-        self.logBox.insert("end", linha)
-        self.logBox.configure(state="disabled")
-        self.logBox.see("end")
-
-    def log(self, msg):
-        """Mantido para compatibilidade - usa log_styled"""
-        if "[ERRO]" in msg:
-            self.log_styled("[ERRO]", msg.replace("[ERRO]", "").strip(), "#ef4444")
-        elif "[SUCESSO]" in msg or "[OK]" in msg:
-            tag = "[SUCESSO]" if "[SUCESSO]" in msg else "[OK]"
-            self.log_styled(tag, msg.replace(tag, "").strip(), "#22c55e")
-        elif "[INFO]" in msg:
-            self.log_styled("[INFO]", msg.replace("[INFO]", "").strip(), "#64748b")
-        elif "[SCAN]" in msg:
-            self.log_styled("[SCAN]", msg.replace("[SCAN]", "").strip(), "#a78bfa")
-        else:
-            self.log_styled("[LOG]", msg, "#94a3b8")
-
-    def limpar_logs(self):
-        """Limpa a área de logs"""
-        self.logBox.configure(state="normal")
-        self.logBox.delete("1.0", "end")
-        self.logBox.configure(state="disabled")
-        self.log_styled("[SISTEMA]", "Logs limpos", "#3b82f6")
-
-    def scroll_to_bottom(self):
-        """Scroll para o final dos logs"""
-        self.logBox.see("end")
-
-    def selectDir(self):
-        caminho = filedialog.askdirectory(
-            parent=self.master,
-            title="Escolha uma pasta",
-            initialdir="~",
-            mustexist=True
-        )
-        if caminho:
-            self.entrada.configure(state="normal")
-            self.entrada.delete(0, ctk.END)
-            self.entrada.insert(0, caminho)
-            self.entrada.configure(state="readonly")
-            self.log_styled("[INFO]", f"Diretório selecionado: {caminho}", "#3b82f6")
+        # Agenda próxima atualização (a cada 100ms)
+        self.after(100, self.update)
