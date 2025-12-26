@@ -45,8 +45,6 @@ class Sidebar(ctk.CTkFrame):
         self._btn("📊  Relatórios", Statistics, app)
         from interface.Config import Config
         self._btn("⚙️  Config", Config, app)
-        from interface.About import Resumo
-        self._btn("ℹ️  Sobre", Resumo, app)
 
     def _btn(self, text, page, app, active=False, bordered=False):
         btn = ctk.CTkButton(
