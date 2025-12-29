@@ -41,8 +41,6 @@ class Sidebar(ctk.CTkFrame):
     def _buttons(self, app):
         from interface.Home import Home
         self._btn("🏠  Início", Home, app)
-        from interface.Statistics import Statistics
-        self._btn("📊  Relatórios", Statistics, app)
         from interface.Config import Config
         self._btn("⚙️  Config", Config, app)
 

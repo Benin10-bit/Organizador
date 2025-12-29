@@ -17,27 +17,29 @@ class App(ctk.CTk):
         self.container = ctk.CTkFrame(self, fg_color="#000000")
         self.container.pack(side="left", fill="both", expand=True)
 
-        self.pages = {}
-        for Page in (Home, Statistics, Config):
-            frame = Page(self.container)
-            self.pages[Page] = frame
-            frame.place(relwidth=1, relheight=1)
-            frame.lower()
+        self.prev = None
+
+        self.paginascriadas = dict()
 
         self.mostrarPagina(Home)
 
     def mostrarPagina(self, pagina):
         self.trocarBotaoAtivo(pagina)
-        self.pages[pagina].lift()
 
+        frame = self.paginascriadas.get(pagina)
+        if frame is None:
+            frame = pagina(self.container)
+            frame.place(relwidth=1, relheight=1)
+            self.paginascriadas[pagina] = frame
+
+        # abaixa a anterior (se for diferente) e traz a nova para frente
+        if self.prev is not None and self.prev is not frame:
+            self.prev.lower()
+        frame.lift()  
+        self.prev = frame
 
     def trocarBotaoAtivo(self, pagina):
         self.sidebar._setBotaoAtivo(pagina)
-        
-
-
-
-
 
 
 def run():
