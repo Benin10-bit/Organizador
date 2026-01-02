@@ -70,15 +70,27 @@ Após a execução, a interface gráfica será aberta e o usuário poderá selec
 
 ```
 Organizador/
-├── main.py
-├── src/
-│   ├── pages/
-│   ├── components/
-│   ├── core/
-│   └── data/
-│       ├── blackList.json
-│       └── rules.json
-└── README.md
+├── .gitignore
+├── README.md
+├── pyproject.toml
+└── src
+    ├── data
+    │   ├── blackList.json
+    │   └── rules.json
+    ├── interface
+    │   ├── About.py
+    │   ├── Config.py
+    │   ├── Home.py
+    │   ├── Sidebar.py
+    │   └── main.py
+    └── organizador
+        ├── __init__.py
+        ├── blacklist.py
+        ├── classifier.py
+        ├── mover.py
+        ├── rules.py
+        └── scanner.py
+
 ```
 
 ---
