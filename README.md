@@ -83,7 +83,7 @@ Organizador/
 
 ---
 
-## 👥 Integrantes do Grupo
+## 👥 Integrantes do Grupo - InfoWeb 2m
 
 * **Kalyne**
 * **Benício**
