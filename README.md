@@ -66,7 +66,7 @@ Após a execução, a interface gráfica será aberta e o usuário poderá selec
 
 ---
 
-## 🏗️ Estrutura do Projeto (resumida)
+## 🏗️ Estrutura do Projeto 
 
 ```
 Organizador/
