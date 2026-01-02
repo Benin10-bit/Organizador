@@ -37,7 +37,7 @@ O **Organizador de Arquivos** permite que o usuário selecione uma pasta do sist
 No diretório raiz do projeto, execute:
 
 ```bash
-pip install customtkinter
+pip install -e .
 ```
 
 > As demais bibliotecas utilizadas fazem parte da biblioteca padrão do Python.
@@ -45,7 +45,7 @@ pip install customtkinter
 ### ▶️ Executando a aplicação
 
 ```bash
-python main.py
+python src/interface/main.py
 ```
 
 Após a execução, a interface gráfica será aberta e o usuário poderá selecionar a pasta que deseja organizar.
