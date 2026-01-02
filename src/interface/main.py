@@ -1,7 +1,6 @@
 import customtkinter as ctk
 from interface.Sidebar import Sidebar
 from interface.Home import Home
-from interface.Statistics import Statistics
 from interface.Config import Config
 
 

@@ -2,70 +2,54 @@ from pathlib import Path
 import mimetypes
 import os
 
-CATEGORIES_WINDOWS = {
+CATEGORIES = {
     "Imagens": [
-        ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".svg", ".webp",".ico", ".psd", ".ai", ".xcf"
+        ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".svg", ".webp",
+        ".ico", ".psd", ".ai", ".xcf"
     ],
+
     "Vídeos": [
-        ".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".mpeg", ".mpg",".webm", ".3gp"
+        ".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".mpeg", ".mpg",
+        ".webm", ".ogv", ".3gp"
     ],
+
     "Documentos": [
-        ".pdf", ".docx",".docx#", ".doc", ".pptx", ".ppt", ".xlsx", ".xls",".rtf", ".txt", ".md", ".csv", ".json", ".xml", ".yaml", ".yml"
+        ".pdf", ".docx", ".docx#", ".doc", ".pptx", ".ppt", ".xlsx", ".xls",
+        ".rtf", ".txt", ".md", ".csv", ".json", ".xml", ".yaml", ".yml",
+        ".odt", ".ods", ".odp", ".epub"
     ],
+
     "Áudio": [
-        ".mp3", ".wav", ".aac", ".flac", ".ogg", ".wma", ".m4a"
+        ".mp3", ".wav", ".aac", ".flac", ".ogg", ".oga", ".wma", ".m4a"
     ],
+
     "Executáveis": [
-        ".exe", ".msi", ".bat", ".cmd", ".com", ".ps1"
+        ".exe", ".msi", ".bat", ".cmd", ".com", ".ps1",
+        ".sh", ".bin", ".run", ".AppImage", ".desktop"
     ],
+
     "Compactados": [
-        ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz"
+        ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz",
+        ".tar.gz", ".tgz"
     ],
+
     "Atalhos": [
         ".lnk", ".url", ".library-ms"
     ],
-    "Fontes": [
-        ".ttf", ".otf", ".woff", ".woff2"
-    ],
-    "Sistemas": [
-        ".dll", ".sys", ".inf", ".reg", ".iso", ".img"
-    ]
-}
 
-CATEGORIES_LINUX = {
-    "Imagens": [
-        ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".svg", ".webp",".ico", ".psd", ".xcf"
-    ],
-    "Vídeos": [
-        ".mp4", ".avi", ".mov", ".mkv", ".flv", ".mpeg", ".mpg", ".webm", ".ogv", ".3gp"
-    ],
-    "Documentos": [
-        ".pdf", ".odt", ".ods", ".odp", ".txt", ".md", ".csv", ".json", ".xml", ".yaml", ".yml", ".epub"
-    ],
-    "Áudio": [
-        ".mp3", ".wav", ".flac", ".ogg", ".oga", ".m4a"
-    ],
-    "Executáveis": [
-        ".sh", ".bin", ".run", ".AppImage", ".desktop"
-    ],
-    "Compactados": [
-        ".zip", ".tar", ".gz", ".bz2", ".xz", ".7z", ".tar.gz", ".tgz"
-    ],
     "Configurações": [
-        ".conf", ".ini", ".service", ".rule", ".mount"
+        ".conf", ".ini", ".service", ".rule", ".mount", ".reg"
     ],
+
     "Fontes": [
         ".ttf", ".otf", ".woff", ".woff2"
     ],
+
     "Sistemas": [
-        ".so", ".img", ".iso", ".log", ".lock"
+        ".dll", ".sys", ".inf", ".so", ".iso", ".img", ".log", ".lock"
     ]
 }
 
-if os.name == "nt":
-    CATEGORIES = CATEGORIES_WINDOWS
-else:
-    CATEGORIES = CATEGORIES_LINUX
 
 def classify(files: list[Path]) -> list:
     """
